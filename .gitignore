@@ -1,0 +1,8 @@
+node_modules
+# dist
+dist_dev
+
+.vscode
+logs
+.env
+.env.prod
