@@ -15,6 +15,13 @@ router.get('/', authMiddleware, requireLogin,
     defaultSize: 10,
   }),
   throwAsNext(controller.getPost));
+// --- Get Post By User ---
+router.get('/user/:id', authMiddleware, requireLogin,
+  paginationMiddleware({
+    maxSize: 20,
+    defaultSize: 10,
+  }),
+  throwAsNext(controller.getPostByUserId));
 // registerSubrouter
 
 // export

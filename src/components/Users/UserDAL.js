@@ -1,5 +1,6 @@
 import * as dbUtil from '../../util/databaseUtil';
 import { ERRORS } from '../../constant';
+import uuidv4 from 'uuid/v4';
 
 export const getUserById = async (userId) => {
   const sql = 'SELECT username, name,avatar, createdAt, numberFollower,numberFollowing FROM users WHERE id = ?';
@@ -57,5 +58,77 @@ export const unfollow = async (id, userId) => {
   } catch (e) {
     dbUtil.rollbackTransaction(transaction);
     return Promise.reject(ERRORS.USER_NOTFOUND_ERROR);
+  }
+};
+
+export const getUser = async (id, userId) => {
+  const getUserSql = `
+    SELECT u.id, u.username, u.name, u.avatar
+    FROM users u
+    WHERE u.id = ?
+  `;
+  const checkFollow = 'SELECT * FROM follow WHERE followerId = ? AND followingId = ?';
+  const [dataUser, check] = await Promise.all([
+    dbUtil.queryOne(getUserSql, [id]),
+    dbUtil.execute(checkFollow, [id, userId]),
+  ]);
+  console.log({ check });
+  if (check.length > 0) {
+    dataUser.followed = true;
+  } else {
+    dataUser.followed = false;
+  }
+  return dataUser;
+};
+
+export const likePost = async (postId, userId) => {
+  const postSql = `
+    UPDATE posts SET likeNumber = likeNumber + 1
+    WHERE id = ?
+  `;
+  const likePostSql = `
+    INSERT INTO like_post(postId, userId)
+    VALUES(?, ?)
+  `;
+  const transaction = await dbUtil.beginTransaction();
+  try {
+    await dbUtil.execute(postSql, [postId], transaction);
+    await dbUtil.execute(likePostSql, [postId, userId], transaction);
+    await dbUtil.commitTransaction(transaction);
+  } catch (e) {
+    await dbUtil.rollbackTransaction(transaction);
+    return Promise.reject(ERRORS.NOTHING_CHANGED);
+  }
+};
+
+export const comment = async (postId, userId, content) => {
+  const sql = `
+    INSERT INTO comments(id, userId, postId, content)
+    VALUES (?,?,?,?)
+  `;
+  const id = uuidv4();
+  await dbUtil.execute(sql, [id, userId, postId, content]);
+};
+
+export const unLikePost = async (postId, userId) => {
+  const postSql = `
+    UPDATE posts SET likeNumber = likeNumber - 1
+    WHERE id = ?
+  `;
+  const unLikePostSql = `
+    DELETE FROM like_post
+    WHERE postId = ?
+    AND userId = ?
+  `;
+  const transaction = await dbUtil.beginTransaction();
+  try {
+    const deleteResult = await dbUtil.execute(unLikePostSql, [postId, userId], transaction);
+    if (deleteResult.affectedRows > 0) {
+      await dbUtil.execute(postSql, [postId], transaction);
+    }
+    await dbUtil.commitTransaction(transaction);
+  } catch (e) {
+    await dbUtil.rollbackTransaction(transaction);
+    return Promise.reject(ERRORS.NOTHING_CHANGED);
   }
 };

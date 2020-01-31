@@ -19,3 +19,32 @@ export const unfollow = async (req, res) => {
   await dbAccess.unfollow(id, userId);
   res.ok();
 };
+
+export const getUser = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req;
+  const user = await dbAccess.getUser(id, userId);
+  res.send(user);
+};
+
+export const like = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req;
+  await dbAccess.likePost(id, userId);
+  res.ok();
+};
+
+export const unlike = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req;
+  await dbAccess.unLikePost(id, userId);
+  res.ok();
+};
+
+export const comment = async (req, res) => {
+  const { id } = req.params;
+  const { userId } = req;
+  const { content } = req.body;
+  await dbAccess.comment(id, userId, content);
+  res.ok();
+};
