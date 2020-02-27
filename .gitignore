@@ -4,6 +4,6 @@ dist_dev
 
 .vscode
 logs
-.env
+# .env
 .env.prod
 .package-lock.json
